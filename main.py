@@ -1,17 +1,5 @@
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
-
-app = FastAPI()
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import List
 import json
@@ -19,13 +7,24 @@ import os
 from openai import OpenAI
 
 # ------------------------
-# App & AI Client
+# App Initialization
 # ------------------------
 
 app = FastAPI(title="AI Shop Co-Pilot")
 
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+# CORS (Permanent Correct Setup)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:3000",
+        "https://your-frontend-domain.vercel.app"
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 MODEL_NAME = "gpt-5-mini"
 
 # ------------------------
@@ -73,7 +72,7 @@ class RunAllResponse(BaseModel):
     paperwork: PaperworkResponse
 
 # ------------------------
-# Internal Logic Functions
+# Internal Logic
 # ------------------------
 
 def run_diagnosis(vehicle: DiagnosticRequest) -> DiagnosticResponse:
@@ -158,11 +157,7 @@ Generate:
 2) Customer-friendly explanation
 3) Repair order summary
 
-Rules:
-- Do NOT add new causes
-- Do NOT guarantee repairs
-- Keep customer explanation under 8 sentences
-- Respond ONLY in valid JSON using this schema:
+Respond ONLY in valid JSON using this schema:
 
 {{
   "technician_notes": string,
@@ -186,7 +181,7 @@ Rules:
         raise HTTPException(status_code=500, detail="Invalid paperwork AI response")
 
 # ------------------------
-# API Endpoints
+# Routes
 # ------------------------
 
 @app.get("/")
